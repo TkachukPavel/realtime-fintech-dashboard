@@ -1,0 +1,8 @@
+<mat-toolbar color="primary">
+  <span>Realtime Fintech Dashboard</span>
+  <span class="spacer"></span>
+  <a mat-button routerLink="/dashboard" routerLinkActive #dashboardRla="routerLinkActive"
+    [matButton]="!dashboardRla.isActive ? 'tonal' : 'filled'">Dashboard</a>
+  <a mat-button routerLink="/settings" routerLinkActive #settingsRla="routerLinkActive"
+    [matButton]="!settingsRla.isActive ? 'tonal' : 'filled'">Settings</a>
+</mat-toolbar>
