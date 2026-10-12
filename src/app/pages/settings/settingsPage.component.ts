@@ -15,10 +15,10 @@ import { ProducerService } from '../../shared/services/producer/producer.service
 @Component({
   selector: 'app-settings',
   imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
-  templateUrl: './settings.html',
-  styleUrl: './settings.scss',
+  templateUrl: './settingsPage.component.html',
+  styleUrl: './settingsPage.component.scss',
 })
-export class Settings {
+export class SettingsComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly producerService = inject(ProducerService);
 

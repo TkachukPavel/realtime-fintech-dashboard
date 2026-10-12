@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
-import { Dashboard } from './pages/dashboard/dashboard';
-import { Settings } from './pages/settings/settings';
+import { DashboardComponent } from './pages/dashboard/dashboardPage.component';
+import { SettingsComponent } from './pages/settings/settingsPage.component';
 
 export const routes: Routes = [
-    { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-    { path: 'dashboard', component: Dashboard },
-    { path: 'settings', component: Settings },
+  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: 'dashboard', component: DashboardComponent },
+  { path: 'settings', component: SettingsComponent },
 ];
