@@ -9,5 +9,4 @@ import { Header } from './core/layout/header/header';
   styleUrl: './app.scss',
 })
 export class App {
-  protected readonly title = signal('realtime-fintech-dashboard');
 }
