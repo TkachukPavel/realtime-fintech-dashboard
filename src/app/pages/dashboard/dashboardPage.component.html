@@ -1,1 +1,32 @@
-<p>dashboard works!</p>,
+<main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full max-w-6xl">
+  <header class="mb-8">
+    <h1 class="font-bold text-slate-900 text-2xl tracking-tight">Dashboard</h1>
+    <p class="mt-1 text-slate-500 text-sm">Monitor your real-time data.</p>
+  </header>
+
+  <section
+    aria-labelledby="controls-heading"
+    class="bg-white shadow-sm mb-6 p-6 border border-slate-200 rounded-xl"
+  >
+    <button mat-button (click)="onStartProducer()">Start producer</button>
+    <button mat-button (click)="onPauseProducer()">Pause producer</button>
+
+    @if (isGenerationRunning()) {
+      <span>Generation is running</span>
+    } @else {
+      <span>Generation is stopped</span>
+    }
+  </section>
+
+  <section
+    aria-labelledby="table-heading"
+    class="bg-white shadow-sm p-6 border border-slate-200 rounded-xl"
+  >
+    <h2 id="table-heading" class="font-semibold text-slate-800 text-lg">Data</h2>
+    <div
+      class="flex justify-center items-center mt-4 px-4 border-2 border-slate-200 border-dashed rounded-lg min-h-64 text-slate-500 text-sm"
+    >
+      Table placeholder
+    </div>
+  </section>
+</main>
