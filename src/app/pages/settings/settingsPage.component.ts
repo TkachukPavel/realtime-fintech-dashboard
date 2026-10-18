@@ -11,6 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { integerValidator } from '../../shared/validators';
 import { ProducerService } from '../../shared/services/producer/producer.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-settings',
@@ -20,6 +21,7 @@ import { ProducerService } from '../../shared/services/producer/producer.service
 })
 export class SettingsComponent {
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly router = inject(Router);
   private readonly producerService = inject(ProducerService);
 
   public readonly form = this.fb.group({
@@ -45,5 +47,6 @@ export class SettingsComponent {
     this.producerService.applySettings(this.form.getRawValue());
 
     this.form.enable();
+    this.router.navigate(['dashboard']);
   }
 }

@@ -1,6 +1,10 @@
 import { Injectable, OnDestroy, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ProducerSettings } from '../../../core/types/producer-settings.type';
 import { WorkerCmd, WorkerResponse } from '../../../core/types/worker-command.type';
+import { BehaviorSubject } from 'rxjs';
+import { InstrumentMetrics } from '../../../core/types/instrument-metrics.type';
+import { createEmptyMetric } from '../../utils/metrics';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +15,9 @@ export class ProducerService implements OnDestroy {
   private readonly _isGenerationRunning = signal(false);
   public readonly isGenerationRunning = this._isGenerationRunning.asReadonly();
 
+  private readonly _error = signal<string | null>(null);
+  public readonly error = this._error.asReadonly();
+
   private readonly _settings = signal<ProducerSettings>({
     instrumentCount: 5,
     updatesPerBatch: 100,
@@ -18,6 +25,15 @@ export class ProducerService implements OnDestroy {
   });
 
   public readonly settings = this._settings.asReadonly();
+
+  private readonly instrumentMetrics = new BehaviorSubject<InstrumentMetrics[]>(
+    Array.from({ length: this.settings().instrumentCount }).map((_, i) => createEmptyMetric(i)),
+  );
+
+  public readonly instrumentMetrics$ = this.instrumentMetrics.asObservable();
+  public readonly instrumentMetricsSig = toSignal(this.instrumentMetrics$, {
+    initialValue: this.instrumentMetrics.value,
+  });
 
   public applySettings(settings: ProducerSettings): void {
     this.stopProducer();
@@ -33,6 +49,7 @@ export class ProducerService implements OnDestroy {
     }
 
     if (typeof Worker !== 'undefined') {
+      this._error.set(null);
       this.worker = new Worker(new URL('../producer.worker', import.meta.url));
 
       this.worker.onmessage = (msg) => this.handleWorkerMessage(msg);
@@ -76,7 +93,13 @@ export class ProducerService implements OnDestroy {
   }
 
   private handleWorkerError(error: ErrorEvent) {
-    console.error(`Worker failed with error ${error.message}`);
+    this.failWith(`Worker failed: ${error.message}`);
+  }
+
+  private failWith(message: string) {
+    console.error(message);
+    this.stopProducer();
+    this._error.set(message);
   }
 
   private handleWorkerMessage(event: MessageEvent<WorkerResponse>) {
@@ -90,8 +113,12 @@ export class ProducerService implements OnDestroy {
         this._isGenerationRunning.set(true);
         break;
       case 'GENERATION_UPDATE': {
-        console.log(`Recieved response: ${data.payload}`);
+        this.instrumentMetrics.next(data.payload);
+        break;
       }
+      case 'ERROR':
+        this.failWith(data.message);
+        break;
     }
   }
 }

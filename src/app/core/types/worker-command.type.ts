@@ -1,3 +1,4 @@
+import { InstrumentMetrics } from './instrument-metrics.type';
 import { ProducerSettings } from './producer-settings.type';
 
 export type WorkerCommand =
@@ -22,7 +23,10 @@ export const WorkerCmd = {
   stop,
 };
 
+export type GenerationUpdate = InstrumentMetrics[];
+
 export type WorkerResponse =
   | { type: 'GENERATION_START' }
-  | { type: 'GENERATION_UPDATE'; payload: string }
-  | { type: 'GENERATION_PAUSE' };
+  | { type: 'GENERATION_UPDATE'; payload: GenerationUpdate }
+  | { type: 'GENERATION_PAUSE' }
+  | { type: 'ERROR'; message: string };

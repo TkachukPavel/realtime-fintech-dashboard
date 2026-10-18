@@ -1,84 +1,127 @@
 /// <reference lib="webworker" />
 
+import { InstrumentMetrics } from '../../core/types/instrument-metrics.type';
 import { ProducerSettings } from '../../core/types/producer-settings.type';
 import { WorkerCommand, WorkerResponse } from '../../core/types/worker-command.type';
+import { calculateMetrics, createEmptyMetric } from '../utils/metrics';
+import { decodeUpdate, loadMarketGenerator, MarketGenerator } from './market-generator';
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
-let count = 0;
 let settings: ProducerSettings;
+let generator: MarketGenerator | null = null;
+let totalUpdates = 0;
+// Incremented on every START/STOP so a slow wasm load can't start a stale session.
+let session = 0;
+
+let metricsState: InstrumentMetrics[] = [];
 
 addEventListener('message', (event: MessageEvent<WorkerCommand>) => {
-  const { data } = event;
-  switch (data.type) {
+  void handleCommand(event.data);
+});
+
+export function handleCommand(command: WorkerCommand): Promise<void> | void {
+  switch (command.type) {
     case 'START':
-      start(data.payload);
-      break;
+      return start(command.payload);
     case 'PAUSE':
-      pause();
-      break;
+      return pause();
     case 'RESUME':
-      resume();
-      break;
+      return resume();
     case 'STOP':
-      stop();
-      break;
+      return stop();
     default:
       throw new Error(`Command is not suppported`);
   }
-});
+}
 
-const computation = () => {
-  const msg: WorkerResponse = {
-    type: 'GENERATION_UPDATE',
-    payload: `tick ${count++}`,
-  };
-  postMessage(msg);
-};
+const post = (msg: WorkerResponse) => postMessage(msg);
 
-function start(config: ProducerSettings) {
+function generateBatch() {
+  if (!generator) return;
+
+  try {
+    const batch = generator.generateBatch(settings.updatesPerBatch);
+    const batchSize = settings.updatesPerBatch;
+    totalUpdates += batchSize;
+
+    const updates = Array.from({ length: batchSize }, (_, i) => decodeUpdate(batch, i));
+
+    metricsState = metricsState.map((metrics) => {
+      const relatedUpdates = updates.filter((update) => update.instrument === metrics.ticker);
+      return calculateMetrics(metrics, relatedUpdates);
+    });
+
+    // Metrics aggregation will consume `batch` here. For now only report a summary.
+    post({
+      type: 'GENERATION_UPDATE',
+      payload: metricsState,
+    });
+  } catch (error) {
+    clearTimer();
+    post({ type: 'ERROR', message: (error as Error).message });
+    post({ type: 'GENERATION_PAUSE' });
+  }
+}
+
+async function start(config: ProducerSettings) {
+  const currentSession = ++session;
+  clearTimer();
   settings = config;
-  intervalId = setInterval(computation, settings.batchInterval);
-  const msg: WorkerResponse = {
-    type: 'GENERATION_START',
-  };
+  totalUpdates = 0;
+  generator = null;
 
-  postMessage(msg);
-}
+  try {
+    const loaded = await loadMarketGenerator();
+    if (currentSession !== session) return; // stopped/restarted while loading
 
-function pause() {
-  if (!intervalId) {
+    loaded.init(config.instrumentCount, Date.now());
+    metricsState = Array.from({ length: config.instrumentCount }).map((_, i) =>
+      createEmptyMetric(i),
+    );
+    generator = loaded;
+  } catch (error) {
+    if (currentSession !== session) return;
+    post({ type: 'ERROR', message: (error as Error).message });
     return;
   }
 
-  clearInterval(intervalId);
-  intervalId = null;
-  const msg: WorkerResponse = {
-    type: 'GENERATION_PAUSE',
-  };
-  postMessage(msg);
+  startTimer();
 }
 
-function resume() {
-  if (!!intervalId) {
-    return;
-  }
-
-  intervalId = setInterval(computation, settings.batchInterval);
-  const msg: WorkerResponse = {
-    type: 'GENERATION_START',
-  };
-
-  postMessage(msg);
+function startTimer() {
+  intervalId = setInterval(generateBatch, settings.batchInterval);
+  post({ type: 'GENERATION_START' });
+  post({ type: 'GENERATION_UPDATE', payload: metricsState });
 }
 
-function stop() {
-  count = 0;
-  if (!!intervalId) {
+function clearTimer() {
+  if (intervalId !== null) {
     clearInterval(intervalId);
     intervalId = null;
   }
-  const msg: WorkerResponse = {
-    type: 'GENERATION_PAUSE',
-  };
-  postMessage(msg);
+}
+
+function pause() {
+  if (intervalId === null) {
+    return;
+  }
+
+  clearTimer();
+  post({ type: 'GENERATION_PAUSE' });
+}
+
+function resume() {
+  if (intervalId !== null || generator === null) {
+    return;
+  }
+
+  startTimer();
+}
+
+function stop() {
+  session++;
+  clearTimer();
+  generator = null;
+  totalUpdates = 0;
+  post({ type: 'GENERATION_PAUSE' });
 }

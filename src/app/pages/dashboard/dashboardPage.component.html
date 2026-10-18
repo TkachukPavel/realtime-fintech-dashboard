@@ -8,13 +8,16 @@
     aria-labelledby="controls-heading"
     class="bg-white shadow-sm mb-6 p-6 border border-slate-200 rounded-xl"
   >
-    <button mat-button (click)="onStartProducer()">Start producer</button>
-    <button mat-button (click)="onPauseProducer()">Pause producer</button>
+    @if (isGenerationRunning()) {
+      <button matButton="outlined" (click)="onPauseProducer()">Pause producer</button>
+    } @else {
+      <button matButton="outlined" (click)="onStartProducer()">Start producer</button>
+    }
 
     @if (isGenerationRunning()) {
-      <span>Generation is running</span>
+      <span class="ps-3">Market updates generation is running</span>
     } @else {
-      <span>Generation is stopped</span>
+      <span class="ps-3">Market updates generation is stopped</span>
     }
   </section>
 
@@ -23,10 +26,46 @@
     class="bg-white shadow-sm p-6 border border-slate-200 rounded-xl"
   >
     <h2 id="table-heading" class="font-semibold text-slate-800 text-lg">Data</h2>
-    <div
-      class="flex justify-center items-center mt-4 px-4 border-2 border-slate-200 border-dashed rounded-lg min-h-64 text-slate-500 text-sm"
-    >
-      Table placeholder
-    </div>
+
+    <table mat-table [dataSource]="metrics()" class="mat-shadow-2 w-100 overflow-x-auto">
+      <ng-container matColumnDef="instrument">
+        <th mat-header-cell *matHeaderCellDef>Instrument</th>
+        <td mat-cell *matCellDef="let element">{{ element.ticker }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="lastTradedPrice">
+        <th mat-header-cell *matHeaderCellDef>Last traded price</th>
+        <td mat-cell *matCellDef="let element">
+          {{ element.lastTradedPrice | nullableCurrency }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="bidAskSpread">
+        <th mat-header-cell *matHeaderCellDef>Bid–ask spread</th>
+        <td mat-cell *matCellDef="let element">{{ element.bidAskSpread | nullableCurrency }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tradingVolume">
+        <th mat-header-cell *matHeaderCellDef>Trading volume</th>
+        <td mat-cell *matCellDef="let element">{{ element.tradingVolume }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="vwap">
+        <th mat-header-cell *matHeaderCellDef>Volume-weighted average price (VWAP)</th>
+        <td mat-cell *matCellDef="let element">
+          {{ element.vwap | nullableCurrency }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="orderBookImbalance">
+        <th mat-header-cell *matHeaderCellDef>Order-book imbalance</th>
+        <td mat-cell *matCellDef="let element">
+          {{ element.orderBookImbalance | nullableNumber }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
   </section>
 </main>

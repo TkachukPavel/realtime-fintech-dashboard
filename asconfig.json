@@ -1,0 +1,22 @@
+{
+  "entries": ["assembly/generator.ts"],
+  "targets": {
+    "debug": {
+      "outFile": "public/wasm/generator.wasm",
+      "textFile": "public/wasm/generator.wat",
+      "sourceMap": true,
+      "debug": true
+    },
+    "release": {
+      "outFile": "public/wasm/generator.wasm",
+      "sourceMap": false,
+      "optimizeLevel": 3,
+      "shrinkLevel": 0,
+      "converge": false,
+      "noAssert": true
+    }
+  },
+  "options": {
+    "runtime": "stub"
+  }
+}

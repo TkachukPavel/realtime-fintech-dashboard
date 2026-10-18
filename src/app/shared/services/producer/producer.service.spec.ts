@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { ProducerService } from './producer.service';
 import { ProducerSettings } from '../../../core/types/producer-settings.type';
+import { InstrumentMetrics } from '../../../core/types/instrument-metrics.type';
 import { WorkerCmd } from '../../../core/types/worker-command.type';
 
 describe('ProducerService', () => {
@@ -56,6 +57,58 @@ describe('ProducerService', () => {
       workerMock.onmessage!({ data: { type: 'GENERATION_START' } } as MessageEvent);
 
       expect(service.isGenerationRunning()).toBe(true);
+    });
+
+    it('on GENERATION_UPDATE it publishes the latest instrument metrics', () => {
+      const updatedMetrics: InstrumentMetrics[] = [
+        {
+          ticker: 'ALFA',
+          lastTradedPrice: 10200,
+          bidAskSpread: 4,
+          tradingVolume: 30,
+          vwap: 10150,
+          orderBookImbalance: 0.125,
+          tradexprice: 304500,
+        },
+      ];
+
+      workerMock.onmessage!({
+        data: { type: 'GENERATION_UPDATE', payload: updatedMetrics },
+      } as MessageEvent);
+
+      expect(service.instrumentMetricsSig()).toEqual(updatedMetrics);
+    });
+
+    it('on ERROR it exposes the message, stops and terminates the worker', () => {
+      spyOn(console, 'error');
+      workerMock.onmessage!({ data: { type: 'GENERATION_START' } } as MessageEvent);
+
+      workerMock.onmessage!({
+        data: { type: 'ERROR', message: 'Generator init failed' },
+      } as MessageEvent);
+
+      expect(service.error()).toBe('Generator init failed');
+      expect(service.isGenerationRunning()).toBe(false);
+      expect(workerMock.terminate).toHaveBeenCalled();
+    });
+
+    it('on worker onerror it exposes the message and terminates the worker', () => {
+      spyOn(console, 'error');
+
+      workerMock.onerror!({ message: 'boom' } as ErrorEvent);
+
+      expect(service.error()).toBe('Worker failed: boom');
+      expect(workerMock.terminate).toHaveBeenCalled();
+    });
+
+    it('clears the error when a new producer is started', () => {
+      spyOn(console, 'error');
+      workerMock.onmessage!({ data: { type: 'ERROR', message: 'x' } } as MessageEvent);
+
+      service.startProducer();
+
+      expect(service.error()).toBeNull();
+      expect(window.Worker).toHaveBeenCalledTimes(2);
     });
   });
 
