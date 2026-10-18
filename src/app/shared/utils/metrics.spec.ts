@@ -75,6 +75,57 @@ describe('Metrics', () => {
     expect(metrics.orderBookImbalance).toBeCloseTo(160 / 1020, 10);
   });
 
+  it('matches the specified two-trade calculation example', () => {
+    const updates: MarketUpdate[] = [
+      {
+        instrument: 'ALFA',
+        priceCents: 10_000,
+        tradeQuantity: 10,
+        bidCents: 9_996,
+        askCents: 10_000,
+        bidQuantity: 600,
+        askQuantity: 400,
+      },
+      {
+        instrument: 'ALFA',
+        priceCents: 10_200,
+        tradeQuantity: 30,
+        bidCents: 10_196,
+        askCents: 10_200,
+        bidQuantity: 600,
+        askQuantity: 400,
+      },
+    ];
+
+    const metrics = calculateMetrics(emptyInstrument, updates);
+
+    expect(metrics.lastTradedPrice).toBe(10_200);
+    expect(metrics.bidAskSpread).toBe(4);
+    expect(metrics.tradingVolume).toBe(40);
+    expect(metrics.vwap).toBe(10_150);
+    expect(metrics.orderBookImbalance).toBe(0.2);
+  });
+
+  it('keeps cumulative metrics isolated between instruments', () => {
+    const bravo: InstrumentMetrics = { ...emptyInstrument, ticker: 'BRVO' };
+    const alfaAfterTrade = calculateMetrics(emptyInstrument, [marketUpdates[0]]);
+    const bravoAfterTrade = calculateMetrics(bravo, [
+      {
+        ...marketUpdates[1],
+        instrument: 'BRVO',
+        priceCents: 20_000,
+        tradeQuantity: 5,
+      },
+    ]);
+    const alfaAfterSecondTrade = calculateMetrics(alfaAfterTrade, [marketUpdates[1]]);
+
+    expect(alfaAfterSecondTrade.tradingVolume).toBe(50);
+    expect(alfaAfterSecondTrade.vwap).toBeCloseTo((30 * 10_200 + 20 * 10_204) / 50, 10);
+    expect(bravoAfterTrade.tradingVolume).toBe(5);
+    expect(bravoAfterTrade.vwap).toBe(20_000);
+    expect(bravoAfterTrade.ticker).toBe('BRVO');
+  });
+
   it('accumulates volume and VWAP across update batches', () => {
     const firstBatch = calculateMetrics(emptyInstrument, marketUpdates.slice(0, 2));
     const secondBatch = calculateMetrics(firstBatch, marketUpdates.slice(2));

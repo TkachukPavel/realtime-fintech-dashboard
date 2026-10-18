@@ -58,6 +58,13 @@ describe('ProducerWorker', () => {
   };
 
   const start = () => handleCommand(WorkerCmd.start(settings));
+  const createDeferred = <T>() => {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((resolvePromise) => {
+      resolve = resolvePromise;
+    });
+    return { promise, resolve };
+  };
 
   beforeEach(() => {
     jasmine.clock().install();
@@ -140,6 +147,50 @@ describe('ProducerWorker', () => {
       jasmine.clock().tick(settings.batchInterval);
 
       expect(postMessageSpy).not.toHaveBeenCalled();
+    });
+
+    it('ignores a previous run that finishes loading after a newer run starts', async () => {
+      const firstLoad = createDeferred<Response>();
+      const secondLoad = createDeferred<Response>();
+      (window.fetch as jasmine.Spy).and.returnValues(firstLoad.promise, secondLoad.promise);
+
+      const firstRun = handleCommand(WorkerCmd.start({ ...settings, instrumentCount: 1 }));
+      const secondSettings = { ...settings, instrumentCount: 2 };
+      const secondRun = handleCommand(WorkerCmd.start(secondSettings));
+
+      secondLoad.resolve(new Response());
+      await secondRun;
+      expect(fakeExports.init).toHaveBeenCalledOnceWith(2, jasmine.any(Number));
+      expect(postMessageSpy).toHaveBeenCalledWith({
+        type: 'GENERATION_UPDATE',
+        payload: Array.from({ length: 2 }).map((_, i) => createEmptyMetric(i)),
+      });
+      postMessageSpy.calls.reset();
+
+      firstLoad.resolve(new Response());
+      await firstRun;
+
+      expect(fakeExports.init).toHaveBeenCalledOnceWith(2, jasmine.any(Number));
+      expect(postMessageSpy).not.toHaveBeenCalled();
+    });
+
+    it('stays paused when pause is requested while the generator is loading', async () => {
+      const pendingLoad = createDeferred<Response>();
+      (window.fetch as jasmine.Spy).and.returnValue(pendingLoad.promise);
+
+      const pendingStart = start();
+      handleCommand(WorkerCmd.pause());
+      pendingLoad.resolve(new Response());
+      await pendingStart;
+      postMessageSpy.calls.reset();
+
+      jasmine.clock().tick(settings.batchInterval);
+      expect(fakeExports.generateBatch).not.toHaveBeenCalled();
+      expect(postMessageSpy).not.toHaveBeenCalledWith({ type: 'GENERATION_START' });
+      expect(postMessageSpy).not.toHaveBeenCalled();
+
+      handleCommand(WorkerCmd.resume());
+      expect(postMessageSpy).toHaveBeenCalledWith({ type: 'GENERATION_START' });
     });
   });
 

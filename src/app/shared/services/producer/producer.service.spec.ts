@@ -8,12 +8,13 @@ import { WorkerCmd } from '../../../core/types/worker-command.type';
 describe('ProducerService', () => {
   let service: ProducerService;
   let workerMock: jasmine.SpyObj<Worker>;
+  let workerConstructor: jasmine.Spy;
 
   beforeEach(() => {
     workerMock = jasmine.createSpyObj<Worker>('Worker', ['postMessage', 'terminate']);
     TestBed.configureTestingModule({});
     service = TestBed.inject(ProducerService);
-    spyOn(window, 'Worker').and.returnValue(workerMock);
+    workerConstructor = spyOn(window, 'Worker').and.returnValue(workerMock);
   });
 
   it('should be created', () => {
@@ -153,6 +154,111 @@ describe('ProducerService', () => {
       expect(workerMock.postMessage).toHaveBeenCalledWith(WorkerCmd.start(settings));
 
       expect(service.settings()).toEqual(settings);
+    });
+
+    it('resets metric values for the new instrument count when settings are applied', () => {
+      service.startProducer();
+      workerMock.onmessage!({
+        data: {
+          type: 'GENERATION_UPDATE',
+          payload: [
+            {
+              ticker: 'ALFA',
+              lastTradedPrice: 10_200,
+              bidAskSpread: 4,
+              tradingVolume: 40,
+              vwap: 10_150,
+              orderBookImbalance: 0.2,
+              tradexprice: 406_000,
+            },
+          ],
+        },
+      } as MessageEvent);
+
+      const settings: ProducerSettings = {
+        instrumentCount: 2,
+        batchInterval: 200,
+        updatesPerBatch: 200,
+      };
+
+      service.applySettings(settings);
+
+      expect(service.instrumentMetricsSig()).toEqual([
+        {
+          ticker: 'ALFA',
+          lastTradedPrice: null,
+          bidAskSpread: null,
+          tradingVolume: 0,
+          vwap: null,
+          orderBookImbalance: null,
+          tradexprice: 0,
+        },
+        {
+          ticker: 'BRVO',
+          lastTradedPrice: null,
+          bidAskSpread: null,
+          tradingVolume: 0,
+          vwap: null,
+          orderBookImbalance: null,
+          tradexprice: 0,
+        },
+      ]);
+      expect(service.settings()).toEqual(settings);
+    });
+
+    it('ignores late results from a worker replaced by a new run', () => {
+      const previousWorker = workerMock;
+      const currentWorker = jasmine.createSpyObj<Worker>('CurrentWorker', [
+        'postMessage',
+        'terminate',
+      ]);
+      workerConstructor.and.returnValues(previousWorker, currentWorker);
+
+      service.startProducer();
+      const previousOnMessage = previousWorker.onmessage!;
+
+      service.applySettings({
+        instrumentCount: 2,
+        updatesPerBatch: 200,
+        batchInterval: 250,
+      });
+      previousOnMessage.call(previousWorker, {
+        data: {
+          type: 'GENERATION_UPDATE',
+          payload: [
+            {
+              ticker: 'ALFA',
+              lastTradedPrice: 12_345,
+              bidAskSpread: 5,
+              tradingVolume: 100,
+              vwap: 12_340,
+              orderBookImbalance: 0.1,
+              tradexprice: 1_234_000,
+            },
+          ],
+        },
+      } as MessageEvent);
+
+      expect(service.instrumentMetricsSig()).toEqual([
+        {
+          ticker: 'ALFA',
+          lastTradedPrice: null,
+          bidAskSpread: null,
+          tradingVolume: 0,
+          vwap: null,
+          orderBookImbalance: null,
+          tradexprice: 0,
+        },
+        {
+          ticker: 'BRVO',
+          lastTradedPrice: null,
+          bidAskSpread: null,
+          tradingVolume: 0,
+          vwap: null,
+          orderBookImbalance: null,
+          tradexprice: 0,
+        },
+      ]);
     });
 
     it('restarts worker if the worker is running', () => {

@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { ProducerService } from '../../shared/services/producer/producer.service';
 import { SettingsComponent } from './settingsPage.component';
 
@@ -7,6 +8,7 @@ describe('Settings', () => {
   let fixture: ComponentFixture<SettingsComponent>;
   let component: SettingsComponent;
   let applySettings: jasmine.Spy;
+  let navigate: jasmine.Spy;
 
   const initialSettings = {
     instrumentCount: 10,
@@ -16,10 +18,12 @@ describe('Settings', () => {
 
   beforeEach(async () => {
     applySettings = jasmine.createSpy('applySettings');
+    navigate = jasmine.createSpy('navigate');
 
     await TestBed.configureTestingModule({
       imports: [SettingsComponent],
       providers: [
+        { provide: Router, useValue: { navigate } },
         {
           provide: ProducerService,
           useValue: {
@@ -68,6 +72,9 @@ describe('Settings', () => {
 
       control.setValue(minimum);
       expect(control.valid).withContext(`${field} accepts its minimum`).toBeTrue();
+
+      control.setValue(maximum);
+      expect(control.valid).withContext(`${field} accepts its maximum`).toBeTrue();
     }
   });
 
@@ -103,6 +110,7 @@ describe('Settings', () => {
     component.onSubmit();
 
     expect(applySettings).toHaveBeenCalledOnceWith(updatedSettings);
+    expect(navigate).toHaveBeenCalledOnceWith(['dashboard']);
     expect(component.form.enabled).toBeTrue();
   });
 });

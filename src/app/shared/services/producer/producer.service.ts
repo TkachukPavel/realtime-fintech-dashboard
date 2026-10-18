@@ -54,12 +54,17 @@ export class ProducerService implements OnDestroy {
 
     if (typeof Worker !== 'undefined') {
       this._error.set(null);
-      this.worker = new Worker(new URL('../producer.worker', import.meta.url));
+      const worker = new Worker(new URL('../producer.worker', import.meta.url));
+      this.worker = worker;
 
-      this.worker.onmessage = (msg) => this.handleWorkerMessage(msg);
-      this.worker.onerror = (evt) => this.handleWorkerError(evt);
+      worker.onmessage = (msg) => {
+        if (this.worker === worker) this.handleWorkerMessage(msg);
+      };
+      worker.onerror = (evt) => {
+        if (this.worker === worker) this.handleWorkerError(evt);
+      };
 
-      this.worker.postMessage(WorkerCmd.start(this.settings()));
+      worker.postMessage(WorkerCmd.start(this.settings()));
     } else {
       throw new Error('Worker API is not suppored');
     }

@@ -10,6 +10,7 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 let settings: ProducerSettings;
 let generator: MarketGenerator | null = null;
 let totalUpdates = 0;
+let paused = false;
 // Incremented on every START/STOP so a slow wasm load can't start a stale session.
 let session = 0;
 
@@ -69,6 +70,7 @@ async function start(config: ProducerSettings) {
   settings = config;
   totalUpdates = 0;
   generator = null;
+  paused = false;
 
   try {
     const loaded = await loadMarketGenerator();
@@ -85,7 +87,7 @@ async function start(config: ProducerSettings) {
     return;
   }
 
-  startTimer();
+  if (!paused) startTimer();
 }
 
 function startTimer() {
@@ -102,24 +104,22 @@ function clearTimer() {
 }
 
 function pause() {
-  if (intervalId === null) {
-    return;
-  }
-
+  paused = true;
+  if (intervalId === null) return;
   clearTimer();
   post({ type: 'GENERATION_PAUSE' });
 }
 
 function resume() {
-  if (intervalId !== null || generator === null) {
-    return;
-  }
+  paused = false;
+  if (intervalId !== null || generator === null) return;
 
   startTimer();
 }
 
 function stop() {
   session++;
+  paused = true;
   clearTimer();
   generator = null;
   totalUpdates = 0;

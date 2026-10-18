@@ -10,11 +10,13 @@ describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
   let component: DashboardComponent;
   let generationRunning: ReturnType<typeof signal<boolean>>;
+  let error: ReturnType<typeof signal<string | null>>;
   let metrics: ReturnType<typeof signal<InstrumentMetrics[]>>;
   let settings: ReturnType<typeof signal<ProducerSettings>>;
 
   beforeEach(async () => {
     generationRunning = signal(false);
+    error = signal<string | null>(null);
     metrics = signal<InstrumentMetrics[]>([]);
     settings = signal<ProducerSettings>({
       instrumentCount: 2,
@@ -26,6 +28,7 @@ describe('DashboardComponent', () => {
       ['startProducer', 'pauseProducer', 'startGeneration'],
       {
         isGenerationRunning: generationRunning,
+        error,
         instrumentMetricsSig: metrics,
         settings,
       },
@@ -53,17 +56,33 @@ describe('DashboardComponent', () => {
     expect(component.metrics).toBe(metrics);
   });
 
+  it('starts or resumes generation when the dashboard initializes', () => {
+    fixture.detectChanges();
+
+    expect(producerService.startGeneration).toHaveBeenCalledOnceWith();
+  });
+
   it('shows controls and status for the current generation state', () => {
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Start producer');
+    expect(fixture.nativeElement.textContent).toContain('Resume');
     expect(fixture.nativeElement.textContent).toContain('Market updates generation is stopped');
 
     generationRunning.set(true);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Pause producer');
+    expect(fixture.nativeElement.textContent).toContain('Pause');
     expect(fixture.nativeElement.textContent).toContain('Market updates generation is running');
+  });
+
+  it('displays producer initialization errors accessibly', () => {
+    error.set('Generator initialization failed');
+
+    fixture.detectChanges();
+
+    const alert = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert).toBeTruthy();
+    expect(alert.textContent).toContain('Generator initialization failed');
   });
 
   it('renders each instrument metric row with formatted values', () => {
@@ -102,14 +121,42 @@ describe('DashboardComponent', () => {
   });
 
   it('should start the producer', () => {
-    component.onStartProducer();
+    fixture.detectChanges();
+    const resumeButton: HTMLButtonElement = fixture.nativeElement.querySelector('button');
 
-    expect(producerService.startGeneration).toHaveBeenCalled();
+    resumeButton.click();
+
+    expect(producerService.startGeneration).toHaveBeenCalledTimes(2);
   });
 
   it('should pause the producer', () => {
-    component.onPauseProducer();
+    generationRunning.set(true);
+    fixture.detectChanges();
+    const pauseButton: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+
+    pauseButton.click();
 
     expect(producerService.pauseProducer).toHaveBeenCalled();
+  });
+
+  it('updates the Pause and Resume controls after producer state changes', () => {
+    producerService.pauseProducer.and.callFake(() => generationRunning.set(false));
+    producerService.startGeneration.and.callFake(() => generationRunning.set(true));
+    fixture.detectChanges();
+
+    generationRunning.set(true);
+    fixture.detectChanges();
+    let control: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    expect(control.textContent).toContain('Pause');
+
+    control.click();
+    fixture.detectChanges();
+    control = fixture.nativeElement.querySelector('button');
+    expect(control.textContent).toContain('Resume');
+
+    control.click();
+    fixture.detectChanges();
+    control = fixture.nativeElement.querySelector('button');
+    expect(control.textContent).toContain('Pause');
   });
 });
