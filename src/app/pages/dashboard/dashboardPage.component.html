@@ -4,27 +4,32 @@
     <p class="mt-1 text-slate-500 text-sm">Monitor your real-time data.</p>
   </header>
 
+  @if (error(); as errorMessage) {
   <section
-    aria-labelledby="controls-heading"
-    class="bg-white shadow-sm mb-6 p-6 border border-slate-200 rounded-xl"
+    role="alert"
+    aria-live="assertive"
+    class="bg-red-50 mb-6 p-4 border border-red-200 rounded-xl text-red-800 text-sm"
   >
+    <h2 class="font-semibold">Something went wrong</h2>
+    <p class="mt-1">{{ errorMessage }}</p>
+  </section>
+  }
+
+  <section aria-labelledby="controls-heading" class="bg-white shadow-sm mb-6 p-6 border border-slate-200 rounded-xl">
     @if (isGenerationRunning()) {
-      <button matButton="outlined" (click)="onPauseProducer()">Pause producer</button>
+    <button matButton="outlined" (click)="onPauseProducer()">Pause</button>
     } @else {
-      <button matButton="outlined" (click)="onStartProducer()">Start producer</button>
+    <button matButton="outlined" (click)="onStartProducer()">Resume</button>
     }
 
     @if (isGenerationRunning()) {
-      <span class="ps-3">Market updates generation is running</span>
+    <span class="ps-3">Market updates generation is running</span>
     } @else {
-      <span class="ps-3">Market updates generation is stopped</span>
+    <span class="ps-3">Market updates generation is stopped</span>
     }
   </section>
 
-  <section
-    aria-labelledby="table-heading"
-    class="bg-white shadow-sm p-6 border border-slate-200 rounded-xl"
-  >
+  <section aria-labelledby="table-heading" class="bg-white shadow-sm p-6 border border-slate-200 rounded-xl">
     <h2 id="table-heading" class="font-semibold text-slate-800 text-lg">Data</h2>
 
     <table mat-table [dataSource]="metrics()" class="mat-shadow-2 w-100 overflow-x-auto">
@@ -68,4 +73,6 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
   </section>
+
+  
 </main>

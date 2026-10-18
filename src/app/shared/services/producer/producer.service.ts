@@ -40,6 +40,10 @@ export class ProducerService implements OnDestroy {
 
     this._settings.set(settings);
 
+    this.instrumentMetrics.next(
+      Array.from({ length: settings.instrumentCount }).map((_, i) => createEmptyMetric(i)),
+    );
+
     this.startProducer();
   }
 
