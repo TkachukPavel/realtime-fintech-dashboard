@@ -1,59 +1,65 @@
-# RealtimeFintechDashboard
+# Realtime Fintech Dashboard
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.6.
+A small Angular application for monitoring simulated financial market activity in real time. It implements the requirements described in [TASK.md](./TASK.md): a live market dashboard, configurable data-producer settings, and a market-update generator written in AssemblyScript, compiled to WebAssembly, and run in a Web Worker.
 
-## Development server
+## Application
 
-To start a local development server, run:
+The application has two pages:
 
-```bash
-ng serve
-```
+- **Dashboard** — displays fictional instruments and their latest traded price, bid–ask spread, cumulative trading volume, cumulative volume-weighted average price (VWAP), and order-book imbalance. It also shows producer status and lets you pause or resume generation.
+- **Settings** — configures instrument count, updates per batch, and batch interval. Applying valid settings starts a new run using those settings.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+The producer generates individual trades and bid/ask snapshots in WebAssembly. Its state is retained between batches, and the dashboard aggregates every trade for the current run rather than storing the full event history.
 
-## Code scaffolding
+## Requirements
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- Node.js and npm
 
-```bash
-ng generate component component-name
-```
+## Install and run
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Install the dependencies, then start the development server:
 
 ```bash
-ng generate --help
+npm install
+npm start
 ```
 
-## Building
+The `start` script compiles the AssemblyScript generator to WebAssembly before starting Angular. Open [http://localhost:4200](http://localhost:4200) in your browser.
 
-To build the project run:
+## Test
+
+Run the Angular unit tests:
 
 ```bash
-ng build
+npm test
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+This script compiles the WebAssembly generator first, then runs the Angular unit tests with Karma and Jasmine.
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+Run the generator checks against the compiled WebAssembly module separately:
 
 ```bash
-ng test
+npm run test:wasm
 ```
 
-## Running end-to-end tests
+These checks cover generator initialization, batch sizes, generated value constraints, gradual price changes, and seeded reproducibility.
 
-For end-to-end (e2e) testing, run:
+## Production build
+
+Build the application for production:
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The build script compiles the WebAssembly generator and then builds the Angular application. Angular build output is written to `dist/`.
 
-## Additional Resources
+## Technology stack
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **Angular 20** and **TypeScript** for the application, routing, forms, and unit tests.
+- **AssemblyScript** for the market-data generator, compiled to **WebAssembly**.
+- **Web Worker** for running the producer away from the UI thread.
+- **RxJS** for reactive event/data handling.
+- **Angular Material** and **Angular CDK** for interface components and UI utilities.
+- **Tailwind CSS 4** with **PostCSS** for styling.
+- **Karma** and **Jasmine** for Angular unit tests; Node.js assertions exercise the compiled Wasm generator.
