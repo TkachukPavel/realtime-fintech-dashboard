@@ -56,12 +56,6 @@ describe('DashboardComponent', () => {
     expect(component.metrics).toBe(metrics);
   });
 
-  it('starts or resumes generation when the dashboard initializes', () => {
-    fixture.detectChanges();
-
-    expect(producerService.startGeneration).toHaveBeenCalledOnceWith();
-  });
-
   it('shows controls and status for the current generation state', () => {
     fixture.detectChanges();
 
@@ -120,13 +114,13 @@ describe('DashboardComponent', () => {
     expect(rows[1].textContent).toContain('N/A');
   });
 
-  it('should start the producer', () => {
+  it('starts the producer when the user selects Resume', () => {
     fixture.detectChanges();
     const resumeButton: HTMLButtonElement = fixture.nativeElement.querySelector('button');
 
     resumeButton.click();
 
-    expect(producerService.startGeneration).toHaveBeenCalledTimes(2);
+    expect(producerService.startGeneration).toHaveBeenCalledOnceWith();
   });
 
   it('should pause the producer', () => {

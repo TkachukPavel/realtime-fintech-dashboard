@@ -24,6 +24,7 @@ export class ProducerService implements OnDestroy {
     batchInterval: 500,
   });
 
+
   public readonly settings = this._settings.asReadonly();
 
   private readonly instrumentMetrics = new BehaviorSubject<InstrumentMetrics[]>(

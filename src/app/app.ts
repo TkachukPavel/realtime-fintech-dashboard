@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './core/layout/header/header.component';
+import { ProducerService } from './shared/services/producer/producer.service';
 
 @Component({
   selector: 'app-root',
@@ -8,4 +9,10 @@ import { HeaderComponent } from './core/layout/header/header.component';
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {}
+export class App implements OnInit {
+  private readonly producerService = inject(ProducerService);
+
+  ngOnInit(): void {
+    this.producerService.startGeneration();
+  }
+}

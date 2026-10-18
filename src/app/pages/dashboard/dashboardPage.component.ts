@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatAnchor } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { ProducerService } from '../../shared/services/producer/producer.service';
@@ -13,7 +13,7 @@ import { NullableNumberPipe } from '../../shared/pipes/nullable-number-pipe';
   templateUrl: './dashboardPage.component.html',
   styleUrl: './dashboardPage.component.scss',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   private readonly producerService = inject(ProducerService);
 
   readonly isGenerationRunning = this.producerService.isGenerationRunning;
@@ -30,10 +30,6 @@ export class DashboardComponent implements OnInit {
     'vwap',
     'orderBookImbalance',
   ];
-
-  ngOnInit(): void {
-    this.producerService.startGeneration()
-  }
 
   public onStartProducer() {
     this.producerService.startGeneration();
