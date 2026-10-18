@@ -1,5 +1,7 @@
 # Realtime Fintech Dashboard
 
+Live demo: [Realtime Fintech Dashboard](https://tkachukpavel.github.io/realtime-fintech-dashboard/)
+
 A small Angular application for monitoring simulated financial market activity in real time. It implements the requirements described in [TASK.md](./TASK.md): a live market dashboard, configurable data-producer settings, and a market-update generator written in AssemblyScript, compiled to WebAssembly, and run in a Web Worker.
 
 ## Application
