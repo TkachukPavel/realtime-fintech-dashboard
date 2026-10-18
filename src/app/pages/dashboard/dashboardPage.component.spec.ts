@@ -114,6 +114,18 @@ describe('DashboardComponent', () => {
     expect(rows[1].textContent).toContain('N/A');
   });
 
+  it('wraps the data table in a horizontally scrollable region', () => {
+    fixture.detectChanges();
+
+    const scrollRegion = fixture.nativeElement.querySelector(
+      '.table-scroll-container[role="region"][tabindex="0"]',
+    );
+    expect(scrollRegion).toBeTruthy();
+    expect(scrollRegion.getAttribute('aria-label')).toBe('Data table');
+    expect(scrollRegion.querySelector('table')).toBeTruthy();
+    expect(getComputedStyle(scrollRegion).overflowX).toBe('auto');
+  });
+
   it('starts the producer when the user selects Resume', () => {
     fixture.detectChanges();
     const resumeButton: HTMLButtonElement = fixture.nativeElement.querySelector('button');
