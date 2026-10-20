@@ -9,7 +9,6 @@ import { decodeUpdate, loadMarketGenerator, MarketGenerator } from './market-gen
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let settings: ProducerSettings;
 let generator: MarketGenerator | null = null;
-let totalUpdates = 0;
 let paused = false;
 // Incremented on every START/STOP so a slow wasm load can't start a stale session.
 let session = 0;
@@ -39,11 +38,9 @@ const post = (msg: WorkerResponse) => postMessage(msg);
 
 function generateBatch() {
   if (!generator) return;
-
   try {
     const batch = generator.generateBatch(settings.updatesPerBatch);
     const batchSize = settings.updatesPerBatch;
-    totalUpdates += batchSize;
 
     const updates = Array.from({ length: batchSize }, (_, i) => decodeUpdate(batch, i));
 
@@ -57,6 +54,7 @@ function generateBatch() {
       type: 'GENERATION_UPDATE',
       payload: metricsState,
     });
+
   } catch (error) {
     clearTimer();
     post({ type: 'ERROR', message: (error as Error).message });
@@ -68,7 +66,6 @@ async function start(config: ProducerSettings) {
   const currentSession = ++session;
   clearTimer();
   settings = config;
-  totalUpdates = 0;
   generator = null;
   paused = false;
 
@@ -122,6 +119,5 @@ function stop() {
   paused = true;
   clearTimer();
   generator = null;
-  totalUpdates = 0;
   post({ type: 'GENERATION_PAUSE' });
 }

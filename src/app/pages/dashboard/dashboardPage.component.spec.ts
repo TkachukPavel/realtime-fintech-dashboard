@@ -88,7 +88,7 @@ describe('DashboardComponent', () => {
         tradingVolume: 30,
         vwap: 10150,
         orderBookImbalance: 0.125,
-        tradexprice: 304500,
+        notionalCents: 304500,
       },
       {
         ticker: 'BRVO',
@@ -97,7 +97,7 @@ describe('DashboardComponent', () => {
         tradingVolume: 0,
         vwap: null,
         orderBookImbalance: null,
-        tradexprice: 0,
+        notionalCents: 0,
       },
     ]);
 

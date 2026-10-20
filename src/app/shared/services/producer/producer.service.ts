@@ -53,8 +53,14 @@ export class ProducerService implements OnDestroy {
       return;
     }
 
-    if (typeof Worker !== 'undefined') {
-      this._error.set(null);
+    if (typeof Worker === 'undefined') {
+      this.failWith('Web Workers are not supported in this browser');
+      return;
+    }
+
+    this._error.set(null);
+
+    try {
       const worker = new Worker(new URL('../producer.worker', import.meta.url));
       this.worker = worker;
 
@@ -66,8 +72,8 @@ export class ProducerService implements OnDestroy {
       };
 
       worker.postMessage(WorkerCmd.start(this.settings()));
-    } else {
-      throw new Error('Worker API is not suppored');
+    } catch (error) {
+      this.failWith(`Failed to start producer: ${(error as Error).message}`);
     }
   }
 

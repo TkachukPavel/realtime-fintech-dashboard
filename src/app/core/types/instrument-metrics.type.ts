@@ -5,5 +5,5 @@ export type InstrumentMetrics = {
   tradingVolume: number;
   vwap: number | null;
   orderBookImbalance: number | null;
-  tradexprice: number;
+  notionalCents: number;
 };

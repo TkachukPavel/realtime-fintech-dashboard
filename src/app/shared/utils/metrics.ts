@@ -18,11 +18,11 @@ export function calculateMetrics(
   const lastBidQty = lastTrade.bidQuantity;
 
   let extraTradeVolume = 0;
-  let extraTradexPrice = 0;
+  let extraNotional = 0;
 
   for (const update of updates) {
     extraTradeVolume += update.tradeQuantity;
-    extraTradexPrice += update.tradeQuantity * update.priceCents;
+    extraNotional += update.tradeQuantity * update.priceCents;
   }
 
   const bidAskSpread = lastAsk - lastBid;
@@ -31,8 +31,8 @@ export function calculateMetrics(
     totalBookQuantity === 0 ? null : (lastBidQty - lastAskQty) / (lastBidQty + lastAskQty);
 
   const tradingVolume = (instrument.tradingVolume ?? 0) + extraTradeVolume;
-  const tradexprice = (instrument?.tradexprice ?? 0) + extraTradexPrice;
-  const vwap = tradingVolume === 0 ? null : tradexprice / tradingVolume;
+  const notional = (instrument?.notionalCents ?? 0) + extraNotional;
+  const vwap = tradingVolume === 0 ? null : notional / tradingVolume;
 
   return {
     ...instrument,
@@ -41,7 +41,7 @@ export function calculateMetrics(
     tradingVolume,
     vwap,
     orderBookImbalance,
-    tradexprice,
+    notionalCents: notional,
   };
 }
 
@@ -51,7 +51,7 @@ export function createEmptyMetric(id: number): InstrumentMetrics {
     lastTradedPrice: null,
     bidAskSpread: null,
     tradingVolume: 0,
-    tradexprice: 0,
+    notionalCents: 0,
     vwap: null,
     orderBookImbalance: null,
   };

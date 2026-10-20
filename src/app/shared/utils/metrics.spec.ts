@@ -58,7 +58,7 @@ describe('Metrics', () => {
     tradingVolume: 0,
     vwap: null,
     orderBookImbalance: null,
-    tradexprice: 0,
+    notionalCents: 0,
   };
 
   it('returns unavailable metrics and zero volume before any updates arrive', () => {

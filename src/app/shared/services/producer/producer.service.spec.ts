@@ -69,7 +69,7 @@ describe('ProducerService', () => {
           tradingVolume: 30,
           vwap: 10150,
           orderBookImbalance: 0.125,
-          tradexprice: 304500,
+          notionalCents: 304500,
         },
       ];
 
@@ -169,7 +169,7 @@ describe('ProducerService', () => {
               tradingVolume: 40,
               vwap: 10_150,
               orderBookImbalance: 0.2,
-              tradexprice: 406_000,
+              notionalCents: 406_000,
             },
           ],
         },
@@ -191,7 +191,7 @@ describe('ProducerService', () => {
           tradingVolume: 0,
           vwap: null,
           orderBookImbalance: null,
-          tradexprice: 0,
+          notionalCents: 0,
         },
         {
           ticker: 'BRVO',
@@ -200,7 +200,7 @@ describe('ProducerService', () => {
           tradingVolume: 0,
           vwap: null,
           orderBookImbalance: null,
-          tradexprice: 0,
+          notionalCents: 0,
         },
       ]);
       expect(service.settings()).toEqual(settings);
@@ -233,7 +233,7 @@ describe('ProducerService', () => {
               tradingVolume: 100,
               vwap: 12_340,
               orderBookImbalance: 0.1,
-              tradexprice: 1_234_000,
+              notionalCents: 1_234_000,
             },
           ],
         },
@@ -247,7 +247,7 @@ describe('ProducerService', () => {
           tradingVolume: 0,
           vwap: null,
           orderBookImbalance: null,
-          tradexprice: 0,
+          notionalCents: 0,
         },
         {
           ticker: 'BRVO',
@@ -256,7 +256,7 @@ describe('ProducerService', () => {
           tradingVolume: 0,
           vwap: null,
           orderBookImbalance: null,
-          tradexprice: 0,
+          notionalCents: 0,
         },
       ]);
     });
